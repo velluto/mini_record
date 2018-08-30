@@ -408,6 +408,7 @@ module MiniRecord
 
             # Remove fields from db no longer in schema
             columns_to_delete = fields_in_db.keys - fields.keys & fields_in_db.keys
+            columns_to_delete -= ignored_columns.map(&:to_s) if respond_to?(:ignored_columns)
             columns_to_delete.each do |field|
               column = fields_in_db[field]
               perform_destructive_action do
