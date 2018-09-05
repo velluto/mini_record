@@ -71,7 +71,12 @@ module MiniRecord
         if ActiveRecord::VERSION::MAJOR.to_i < 4
           field.sql_type.to_s.downcase
         else
-          connection.type_to_sql(field.type.to_sym, field.limit, field.precision, field.scale)
+          case connection.class.instance_method(:type_to_sql).arity
+          when 4
+            connection.type_to_sql(field.type.to_sym, field.limit, field.precision, field.scale)
+          else
+            connection.type_to_sql(field.type.to_sym, limit: field.limit, precision: field.precision, scale: field.scale)
+          end
         end
       end
 
@@ -178,9 +183,11 @@ module MiniRecord
       end
 
       def add_index(column_name, options={})
-        index_name = connection.index_name(table_name, :column => column_name)
+        table = respond_to?(:table_name_without_sharding) ? table_name_without_sharding : table_name # Compatibility with ActiveRecordSharding gem
+        index_name = connection.index_name(table, :column => column_name)
         indexes[index_name] = options.merge(:column => column_name) unless indexes.key?(index_name)
         index_name
+      rescue ActiveRecord::NoDatabaseError
       end
       alias :index :add_index
 
@@ -267,7 +274,9 @@ module MiniRecord
         # This catches stuff like :null, :precision, etc
         # Ignore junk attributes that different versions of Rails include
         [:name, :limit, :precision, :scale, :default, :null, :type].each do |att|
-          if fields[field].respond_to? :members
+          if fields[field].respond_to?(:options) && fields[field].options.include?(att)
+            value = fields[field].options[att]
+          elsif fields[field].respond_to?(:members)
             value = fields[field].members.include?(att) ? fields[field][att] : nil
           else
             value = fields[field][att]

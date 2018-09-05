@@ -1,3 +1,3 @@
 module MiniRecord
-  VERSION = '0.5.1531504952'
+  VERSION = '0.5.1536170994'
 end
