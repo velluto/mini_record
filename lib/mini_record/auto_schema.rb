@@ -326,6 +326,7 @@ module MiniRecord
       def auto_upgrade!(dry_run = false)
         return unless connection?
         return if respond_to?(:abstract_class?) && abstract_class?
+        return if defined?(ActiveRecord::SchemaMigration) and self == ActiveRecord::SchemaMigration
         @dry_run = dry_run
         @destructive_change_needed = false
 
