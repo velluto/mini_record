@@ -340,7 +340,7 @@ module MiniRecord
             logger.warn "[MiniRecord] Creating Table #{table_name}" if logger
             unless @dry_run
               connection.table_definition = table_definition
-              connection.create_table(table_name, **create_table_options)
+              connection.create_table(table_name, *create_table_options)
               connection.table_definition = init_table_definition(connection)
             end
           end
