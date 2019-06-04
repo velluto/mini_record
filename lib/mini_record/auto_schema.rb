@@ -81,7 +81,7 @@ module MiniRecord
       end
 
       def create_table_options
-        @create_table_options ||= []
+        @create_table_options || (defined?(ApplicationRecord) ? ApplicationRecord.instance_variable_get(:@create_table_options) : nil)
       end
 
       def rename_fields
