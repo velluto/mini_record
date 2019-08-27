@@ -18,6 +18,8 @@ module MiniRecord
         when -5
           # Rails 4.1
           ActiveRecord::ConnectionAdapters::TableDefinition.new(connection.native_database_types, table_name, false, {}, nil)
+        when -3
+          ActiveRecord::ConnectionAdapters::TableDefinition.new(connection, table_name)
         else
           # Rails 5.0
           if ActiveRecord::ConnectionAdapters::TableDefinition.instance_method(:initialize).parameters.size == 5
