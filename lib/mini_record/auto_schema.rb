@@ -290,7 +290,6 @@ module MiniRecord
           next if value.nil? and [:limit, :precision, :scale].include?(att)
 
           old_value = fields_in_db[field].send(att)
-          # puts "#{field_name}[#{att}] = #{value.inspect} vs #{old_value.inspect}"
 
           old_value = 0 if att == :scale and old_value.nil? and value == 0
 
@@ -329,6 +328,8 @@ module MiniRecord
         return unless connection?
         return if respond_to?(:abstract_class?) && abstract_class?
         return if defined?(ActiveRecord::SchemaMigration) and self == ActiveRecord::SchemaMigration
+        return if defined?(ActiveStorage::Attachment) and self == ActiveStorage::Attachment
+        return if defined?(ActiveStorage::Blob) and self == ActiveStorage::Blob
         @dry_run = dry_run
         @destructive_change_needed = false
 
