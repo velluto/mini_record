@@ -186,7 +186,7 @@ module MiniRecord
 
       def add_index(column_name, options={})
         table = respond_to?(:table_name_without_sharding) ? table_name_without_sharding : table_name # Compatibility with ActiveRecordSharding gem
-        index_name = connection.index_name(table, :column => column_name)
+        index_name = index_name(table, :column => column_name)
         indexes[index_name] = options.merge(:column => column_name) unless indexes.key?(index_name)
         index_name
       rescue ActiveRecord::NoDatabaseError
@@ -510,6 +510,56 @@ module MiniRecord
           logger.error " - This change is destructive and was not performed!" if logger
           @dry_run = old_dry_run
         end
+      end
+
+      private
+
+      def index_name(table_name, options) # :nodoc:
+        if Hash === options
+          if options[:column]
+            if options[:_uses_legacy_index_name]
+              "index_#{table_name}_on_#{Array(options[:column]) * '_and_'}"
+            else
+              generate_index_name(table_name, options[:column])
+            end
+          elsif options[:name]
+            options[:name]
+          else
+            raise ArgumentError, "You must specify the index name"
+          end
+        else
+          index_name(table_name, index_name_options(options))
+        end
+      end
+
+      def index_name_options(column_names)
+        if expression_column_name?(column_names)
+          column_names = column_names.scan(/\w+/).join("_")
+        end
+
+        { column: column_names }
+      end
+
+      def expression_column_name?(column_name)
+        column_name.is_a?(String) && /\W/.match?(column_name)
+      end
+
+      def generate_index_name(table_name, column)
+        name = "index_#{table_name}_on_#{Array(column) * '_and_'}"
+        return name if name.bytesize <= max_index_name_size
+
+        # Fallback to short version, add hash to ensure uniqueness
+        hashed_identifier = "_" + OpenSSL::Digest::SHA256.hexdigest(name).first(10)
+        name = "idx_on_#{Array(column) * '_'}"
+
+        short_limit = max_index_name_size - hashed_identifier.bytesize
+        short_name = name.mb_chars.limit(short_limit).to_s
+
+        "#{short_name}#{hashed_identifier}"
+      end
+
+      def max_index_name_size
+        62
       end
     end # ClassMethods
   end # AutoSchema
